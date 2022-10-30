@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Последние обновления на сайте{% endblock %}
+{% block content %}
+  {% for post in page_obj %}
+    <p>{{ post.text }}</p>
+      <a href="{% url 'posts:post_detail' post.id %}">подробнее</a>
+      <p>
+      {% if post.group %}
+              <a href="{% url 'posts:group_posts' post.group.slug %}">все записи группы</a>
+      {% endif %}
+  {% endfor %}
+{% include 'posts/includes/paginator.html' %}
+{% endblock %}
