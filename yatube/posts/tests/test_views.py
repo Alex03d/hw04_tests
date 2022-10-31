@@ -36,16 +36,20 @@ class PostURLTest(TestCase):
                                   reverse('posts:index')
                                   ),
                                  ('posts/group_list.html',
-                                  reverse('posts:group_posts', kwargs={'slug': 'test-slug'})
+                                  reverse('posts:group_posts',
+                                          kwargs={'slug': 'test-slug'})
                                   ),
                                  ('posts/profile.html',
-                                  reverse('posts:profile', kwargs={'username': self.post.author.username}),
+                                  reverse('posts:profile',
+                                          kwargs={'username': self.post.author.username}),
                                   ),
                                  ('posts/post_detail.html',
-                                  reverse('posts:post_detail', kwargs={'post_id': self.post.id})
+                                  reverse('posts:post_detail',
+                                          kwargs={'post_id': self.post.id})
                                   ),
                                  ('posts/create_post.html',
-                                  reverse('posts:post_edit', kwargs={'post_id': self.post.id})
+                                  reverse('posts:post_edit',
+                                          kwargs={'post_id': self.post.id})
                                   ),
                                  ('posts/create_post.html',
                                   reverse('posts:post_create')

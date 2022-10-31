@@ -21,7 +21,6 @@ class PostFormTexts(TestCase):
         self.authorized_client = Client()
         self.authorized_client.force_login(self.guest_user)
 
-
     def test_create_post(self):
         """Валидная форма создает пост"""
         group = Group.objects.create(

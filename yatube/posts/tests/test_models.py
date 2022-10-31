@@ -21,11 +21,11 @@ class PostModelTest(TestCase):
             text='Тестовый пост',
         )
 
-
     def test_model_have_correct_object_name(self):
         post = PostModelTest.post
         expected_object_name = post.text
         self.assertEqual(expected_object_name, str(post))
+
 
 
 class GroupModelTest(TestCase):

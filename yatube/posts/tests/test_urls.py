@@ -19,9 +19,7 @@ class PostURLTest(TestCase):
         )
         cls.post = Post.objects.create(
             author=cls.author_post,
-            text='Текстовый пост',
-    )
-
+            text='Текстовый пост',)
 
     def setUp(self):
         self.guest_client = Client()
@@ -45,18 +43,17 @@ class PostURLTest(TestCase):
                 response = self.authorized_client.get(address)
                 self.assertTemplateUsed(response, template)
 
-
     def test_urls_uses_correct_template_redirect_if_not_authorized(self):
         url_templates_names = {
             '/create/': '/auth/login/?next=/create/',
-            f'/posts/{PostURLTest.post.id}/edit/': f'/auth/login/?next=/posts/{PostURLTest.post.id}/edit/',
+            f'/posts/{PostURLTest.post.id}/edit/':
+                f'/auth/login/?next=/posts/{PostURLTest.post.id}/edit/',
         }
 
         for address, template in url_templates_names.items():
             with self.subTest(address=address):
                 response = self.guest_client.get(address)
                 self.assertRedirects(response, template)
-
 
     def test_urls_uses_correct_template_if_author(self):
         url_templates_names = {
