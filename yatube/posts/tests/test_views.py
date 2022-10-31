@@ -32,28 +32,18 @@ class PostURLTest(TestCase):
         self.author_post.force_login(PostURLTest.author_post)
 
     def test_pages_uses_correct_template(self):
-        templates_pages_names = [('posts/index.html',
-                                  reverse('posts:index')
-                                  ),
-                                 ('posts/group_list.html',
-                                  reverse('posts:group_posts',
-                                          kwargs={'slug': 'test-slug'})
-                                  ),
-                                 ('posts/profile.html',
-                                  reverse('posts:profile',
-                                          kwargs={'username': self.post.author.username}),
-                                  ),
-                                 ('posts/post_detail.html',
-                                  reverse('posts:post_detail',
-                                          kwargs={'post_id': self.post.id})
-                                  ),
-                                 ('posts/create_post.html',
-                                  reverse('posts:post_edit',
-                                          kwargs={'post_id': self.post.id})
-                                  ),
-                                 ('posts/create_post.html',
-                                  reverse('posts:post_create')
-                                  )]
+        templates_pages_names = [
+            ('posts/index.html',
+             reverse('posts:index')),
+            ('posts/group_list.html',
+             reverse('posts:group_posts', kwargs={'slug': 'test-slug'})),
+            ('posts/profile.html',
+             reverse('posts:profile', kwargs={'username': self.post.author.username})),
+            ('posts/post_detail.html',
+             reverse('posts:post_detail', kwargs={'post_id': self.post.id})),
+            ('posts/create_post.html',
+             reverse('posts:post_edit', kwargs={'post_id': self.post.id})),
+            ('posts/create_post.html', reverse('posts:post_create'))]
 
         for template, reverse_name in templates_pages_names:
             return template, reverse_name

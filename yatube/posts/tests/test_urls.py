@@ -28,7 +28,6 @@ class PostURLTest(TestCase):
         self.author_post = Client()
         self.author_post.force_login(PostURLTest.author_post)
 
-
     def test_urls_uses_correct_template_authorized(self):
         url_templates_names = {
             '/': 'posts/index.html',
