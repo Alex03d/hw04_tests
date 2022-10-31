@@ -27,7 +27,6 @@ class PostModelTest(TestCase):
         self.assertEqual(expected_object_name, str(post))
 
 
-
 class GroupModelTest(TestCase):
     @classmethod
     def setUpClass(cls):
