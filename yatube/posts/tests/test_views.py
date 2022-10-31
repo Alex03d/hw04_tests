@@ -33,30 +33,29 @@ class PostURLTest(TestCase):
 
     def test_pages_uses_correct_template(self):
         templates_pages_names = [('posts/index.html',
-             reverse('posts:index')
-             ),
-            ('posts/group_list.html',
-             reverse('posts:group_posts', kwargs={'slug': 'test-slug'})
-             ),
-            ('posts/profile.html',
-             reverse('posts:profile', kwargs={'username': self.post.author.username}),
-             ),
-            ('posts/post_detail.html',
-             reverse( 'posts:post_detail', kwargs={'post_id': self.post.id})
-             ),
-            ('posts/create_post.html',
-             reverse('posts:post_edit', kwargs={'post_id': self.post.id})
-             ),
-            ('posts/create_post.html',
-             reverse('posts:post_create')
-             )]
+                                  reverse('posts:index')
+                                  ),
+                                 ('posts/group_list.html',
+                                  reverse('posts:group_posts', kwargs={'slug': 'test-slug'})
+                                  ),
+                                 ('posts/profile.html',
+                                  reverse('posts:profile', kwargs={'username': self.post.author.username}),
+                                  ),
+                                 ('posts/post_detail.html',
+                                  reverse('posts:post_detail', kwargs={'post_id': self.post.id})
+                                  ),
+                                 ('posts/create_post.html',
+                                  reverse('posts:post_edit', kwargs={'post_id': self.post.id})
+                                  ),
+                                 ('posts/create_post.html',
+                                  reverse('posts:post_create')
+                                  )]
 
         for template, reverse_name in templates_pages_names:
             return template, reverse_name
             with self.subTest(reverse_name=reverse_name):
                 response = self.authorized_client.get(reverse_name)
                 self.assertTemplateUsed(response, template)
-
 
     def test_post_create_correct_context(self):
         """Тест шаблона post_create с правильными полями  формы"""
@@ -121,7 +120,6 @@ class PaginatorViewsTest(TestCase):
             with self.subTest(template=template):
                 response = self.guest_client.get(template + '?page=2')
                 self.assertEqual(len(response.context['page_obj']), 3)
-
 
 # class PostURLTest(TestCase):
 #     @classmethod
