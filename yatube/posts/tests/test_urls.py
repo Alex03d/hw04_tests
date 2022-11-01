@@ -1,4 +1,3 @@
-from django.contrib.auth import get_user_model
 from django.test import TestCase, Client
 
 from ..models import Post, Group, User
@@ -20,7 +19,6 @@ class PostURLTest(TestCase):
             text='Текстовый пост',)
 
     def setUp(self):
-        # self.guest_client = Client()
         self.authorized_client = Client()
         self.authorized_client.force_login(PostURLTest.simple_user)
         self.author_post = Client()
