@@ -3,9 +3,7 @@ from django.test import Client, TestCase
 from django.urls import reverse
 from django import forms
 
-from ..models import Post, Group
-
-User = get_user_model()
+from ..models import Post, Group, User
 
 
 class PostURLTest(TestCase):
@@ -55,7 +53,6 @@ class PostURLTest(TestCase):
                 self.assertTemplateUsed(response, template)
 
     def test_post_create_correct_context(self):
-        """Тест шаблона post_create с правильными полями  формы"""
         response = self.author_post.get(reverse('posts:post_create'))
         form_fields = {
             'text': forms.fields.CharField,
@@ -77,7 +74,6 @@ class PaginatorViewsTest(TestCase):
             slug="test_group",
             description="тестирование",
         )
-        #  Создаём 13 тестовых записей
         for i in range(13):
             cls.post = Post.objects.create(
                 text=f'Тестовый пост {i}',
@@ -86,16 +82,12 @@ class PaginatorViewsTest(TestCase):
             )
 
     def setUp(self):
-        #  Создаем неавторизованный клиент
         self.guest_client = Client()
         self.user = User.objects.get(username="Test_User")
-        #  Создаем авторизованый клиент
         self.authorized_client = Client()
-        #  Авторизуем пользователя
         self.authorized_client.force_login(self.user)
 
     def test_first_page_contains_ten_records(self):
-        """По 10 постов на первой странице у index, group_list и profile"""
         templates = [
             reverse('posts:index'),
             reverse('posts:profile', kwargs={'username': 'Test_User'}),
@@ -107,7 +99,6 @@ class PaginatorViewsTest(TestCase):
                 self.assertEqual(len(response.context['page_obj']), 10)
 
     def test_second_page_contains_three_records(self):
-        """По 3 поста на второй странице index, group_list и profile"""
         templates = [
             reverse('posts:index'),
             reverse('posts:profile', kwargs={'username': 'Test_User'}),
@@ -143,8 +134,6 @@ class PostURLTest(TestCase):
         self.author_post.force_login(PostURLTest.author_post)
 
     def test_post_create_correct_appearance(self):
-        """View-функция post_create верно создает пост и отображает его"""
-        # создадим запись в БД
         Post.objects.create(
             text='Текстовый пост с группой',
             author=User.objects.get(username='author_post'),
