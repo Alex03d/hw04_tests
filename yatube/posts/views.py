@@ -2,8 +2,8 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.csrf import csrf_protect
 
-from .forms import PostForm
-from .models import Group, Post, User
+from .forms import PostForm, CommentForm
+from .models import Group, Post, User, Comment
 from .utils import external_paginator
 
 
@@ -19,20 +19,26 @@ def index(request):
 def profile(request, username):
     author = get_object_or_404(User, username=username)
     post_list = author.posts.all()
+    posts_comment = author.comments.all()
 
     context = {
         'author': author,
         'page_obj': external_paginator(request, post_list),
+        'comments': posts_comment,
     }
     return render(request, 'posts/profile.html', context)
 
 
 def post_detail(request, post_id):
     post_info = get_object_or_404(Post, pk=post_id)
+    form = CommentForm()
+    posts_comment = Comment.objects.select_related('post').filter(post=post_id)
 
     context = {
         'post_info': post_info,
-        'post_id': post_id
+        'post_id': post_id,
+        'form': form,
+        'comments': posts_comment,
     }
     return render(request, 'posts/post_detail.html', context)
 
@@ -53,7 +59,9 @@ def group_posts(request, slug):
 def post_create(request):
     user = request.user
     if request.method == 'POST':
-        form = PostForm(request.POST or None)
+        form = PostForm(
+            request.POST or None,
+            files=request.FILES or None)
 
         if form.is_valid():
             post = form.save(commit=False)
@@ -66,16 +74,51 @@ def post_create(request):
 
 
 @login_required
+# def post_edit(request, post_id):
+#     post = get_object_or_404(Post, pk=post_id)
+#     if request.user == post.author:
+#         form = PostForm(
+#             request.POST or None,
+#             files=request.FILES or None,
+#             instance=post
+#         )
+#         context = {
+#             'form': form,
+#             'is_edit': True,
+#         }
+#         if form.is_valid():
+#             form.save()
+#             return redirect('posts:post_detail', post_id)
+#         return render(request, 'posts/create_post.html', context)
+#     return redirect('posts:post_detail', post_id)
 def post_edit(request, post_id):
     post = get_object_or_404(Post, pk=post_id)
-    if request.user == post.author:
-        form = PostForm(request.POST or None, instance=post)
-        context = {
-            'form': form,
-            'is_edit': True,
-        }
-        if form.is_valid():
-            form.save()
-            return redirect('posts:post_detail', post_id)
-        return render(request, 'posts/create_post.html', context)
-    return redirect('posts:post_detail', post_id)
+    if post.author != request.user:
+        return redirect('posts:post_detail', post_id=post_id)
+
+    form = PostForm(
+        request.POST or None,
+        files=request.FILES or None,
+        instance=post
+    )
+    if form.is_valid():
+        form.save()
+        return redirect('posts:post_detail', post_id=post_id)
+    context = {
+        'post': post,
+        'form': form,
+        'is_edit': True,
+    }
+    return render(request, 'posts/create_post.html', context)
+
+
+@login_required
+def add_comment(request, post_id):
+    post = get_object_or_404(Post, id=post_id)
+    form = CommentForm(request.POST or None)
+    if form.is_valid():
+        comment = form.save(commit=False)
+        comment.author = request.user
+        comment.post = post
+        comment.save()
+    return redirect('posts:post_detail', post_id=post_id)
