@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% load thumbnail %}
-{% block title %}Последние обновления на сайте{% endblock %}
+{% block title %}Избранные авторы{% endblock %}
 {% block content %}
 
 {% load cache %}
@@ -14,7 +14,7 @@
       </p>
       <p>
       <p>{{ post.text }}</p>
-          <a href="{% url 'posts:post_detail' post.id %}">подробнее</a>
+          <a href="{% url 'posts:profile' post.author.username %}">подробнее</a>
       <p>
       {% if post.group %}
               <a href="{% url 'posts:group_posts' post.group.slug %}">все записи группы</a>

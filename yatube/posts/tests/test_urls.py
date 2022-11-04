@@ -1,3 +1,4 @@
+# from django.core.cache import cache
 from django.test import TestCase, Client
 
 from ..models import Post, Group, User
@@ -23,6 +24,7 @@ class PostURLTest(TestCase):
         self.authorized_client.force_login(PostURLTest.simple_user)
         self.author_post = Client()
         self.author_post.force_login(PostURLTest.author_post)
+        # cache.clear()
 
     def test_urls_uses_correct_template_authorized(self):
         url_templates_names = {

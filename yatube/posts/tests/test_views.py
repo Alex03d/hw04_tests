@@ -1,8 +1,11 @@
+import time
+
+from django.core.cache import cache
 from django.test import Client, TestCase
 from django.urls import reverse
 from django import forms
 
-from ..models import Post, Group, User
+from ..models import Post, Group, User, Follow
 
 
 class PostURLTest(TestCase):
@@ -27,6 +30,8 @@ class PostURLTest(TestCase):
         self.authorized_client.force_login(PostURLTest.simple_user)
         self.author_post = Client()
         self.author_post.force_login(PostURLTest.author_post)
+        self.subscriber_user = Client()
+        # cache.clear()
 
     def test_pages_uses_correct_template(self):
         templates_pages_names = [
@@ -62,6 +67,17 @@ class PostURLTest(TestCase):
                 form_field = response.context.get('form').fields.get(value)
                 self.assertIsInstance(form_field, expected)
 
+    # def test_cache_index_page(self):
+    #     response_one = self.guest_client.get(template)
+    #     Post.objects.create(
+    #         text='Текст тестировки кэша',
+    #         author=self.user,
+    #     )
+    #     response_two = self.authorized_client.get(self.posts_index)
+    #     self.assertEqual(response_one.content, response_two.content)
+    #     cache.clear()
+    #     response_three = self.authorized_client.get(self.posts_index)
+    #     self.assertNotEqual(response_one.content, response_three.content)
 
 class PaginatorViewsTest(TestCase):
     @classmethod
@@ -115,6 +131,7 @@ class PostURLTest(TestCase):
         super().setUpClass()
         cls.author_post = User.objects.create_user(username='author_post')
         cls.simple_user = User.objects.create_user(username='simple_user')
+        cls.subscriber_user = User.objects.create_user(username='subscriber_user')
         cls.group = Group.objects.create(
             title='Тестовая группа',
             slug='test-slug',
@@ -129,8 +146,12 @@ class PostURLTest(TestCase):
         self.guest_client = Client()
         self.authorized_client = Client()
         self.authorized_client.force_login(PostURLTest.simple_user)
+        self.authorized_client_2 = Client()
+        self.authorized_client_2.force_login(PostURLTest.simple_user)
         self.author_post = Client()
         self.author_post.force_login(PostURLTest.author_post)
+        self.subscriber_user = Client()
+        self.subscriber_user.force_login(PostURLTest.subscriber_user)
 
     def test_post_create_correct_appearance(self):
         Post.objects.create(
@@ -169,3 +190,44 @@ class PostURLTest(TestCase):
                     title='Тестовая группа',
                 )
             )
+
+    def test_cache_index_page(self):
+        first_look = self.authorized_client.get(
+            reverse('posts:index'))
+        Post.objects.create(
+            text='Текст тестировки кэша',
+            author=User.objects.get(username='author_post'),
+        )
+        second_look = self.authorized_client.get(
+            reverse('posts:index'))
+        self.assertEqual(first_look.content, second_look.content)
+        cache.clear()
+        third_look = self.authorized_client.get(
+            reverse('posts:index'))
+        self.assertNotEqual(first_look.content, third_look.content)
+        # Post.objects.create(
+        #     text='Текст 2 тестировки кэша',
+        #     author=User.objects.get(username='author_post'),
+        # )
+        # time.sleep(2)
+        # fourth_look = self.authorized_client.get(
+        #     reverse('posts:index'))
+        # self.assertNotEqual(third_look.content, fourth_look.content)
+
+    def test_following_function(self):
+        Follow.objects.create(
+            user=User.objects.get(username='subscriber_user'),
+            author=User.objects.get(username='author_post')
+        )
+        followers_count = Follow.objects.count()
+
+        self.authorized_client.get(
+                reverse(
+                    'posts:profile_follow',
+                    kwargs={'username': 'author_post'}))
+        self.assertEqual(Follow.objects.count(), followers_count + 1)
+        self.authorized_client.get(
+                reverse(
+                    'posts:profile_unfollow',
+                    kwargs={'username': 'author_post'}))
+        self.assertEqual(Follow.objects.count(), followers_count)
