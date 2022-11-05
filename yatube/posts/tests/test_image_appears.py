@@ -12,7 +12,7 @@ TEMP_MEDIA_ROOT = tempfile.mkdtemp(dir=settings.BASE_DIR)
 
 
 @override_settings(MEDIA_ROOT=TEMP_MEDIA_ROOT)
-class TaskCreateFormTests(TestCase):
+class PostImageTests(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -56,28 +56,20 @@ class TaskCreateFormTests(TestCase):
                 reverse(
                     'posts:group_posts',
                     kwargs={'slug': 'test-slug'})),
-            # 'post_detail': self.client.get(
-            #     reverse(
-            #         'posts:post_detail',
-            #         kwargs={'post_id': self.post.id})
-            # )
         }
         for response in responses.values():
             first_object = response.context['page_obj'][0]
             post_image = first_object.image
             self.assertIsNotNone(post_image)
 
-        # response_in_profile_page = {
-        #     'post_detail': self.client.get(
-        #         reverse(
-        #             'posts:post_detail',
-        #             kwargs={'post_id': self.post.id}))
-        # }
-        #
-        # for response in response_in_profile_page.values():
-        #     first_object = response.context['post_info'][0]
-        #     post_image = first_object.image
-        #     self.assertIsNotNone(post_image)
+        response = self.client.get(
+            reverse(
+                'posts:post_detail',
+                kwargs={'post_id': self.post.id})
+        )
+        only_object = response.context['post_info']
+        post_image = only_object.image
+        self.assertIsNotNone(post_image)
 
     @classmethod
     def tearDownClass(cls):

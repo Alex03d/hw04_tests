@@ -1,5 +1,3 @@
-import time
-
 from django.core.cache import cache
 from django.test import Client, TestCase
 from django.urls import reverse
@@ -8,14 +6,15 @@ from django import forms
 from ..models import Post, Group, User, Follow
 
 
-class PostURLTest(TestCase):
+class PostViewTest(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
         cls.author_post = User.objects.create_user(username='author_post')
-        cls.simple_user = User.objects.create_user(username='simple_user')
+        cls.authorized_user = User.objects.create_user(username='authorized_user')
+        cls.subscribed_user = User.objects.create_user(username='subscribed_user')
         cls.group = Group.objects.create(
-            title='Тестовая гурппа',
+            title='Тестовая группа',
             slug='test-slug',
             description='Тестовое описание',
         )
@@ -25,13 +24,12 @@ class PostURLTest(TestCase):
         )
 
     def setUp(self):
-        self.guest_client = Client()
-        self.authorized_client = Client()
-        self.authorized_client.force_login(PostURLTest.simple_user)
         self.author_post = Client()
-        self.author_post.force_login(PostURLTest.author_post)
-        self.subscriber_user = Client()
-        # cache.clear()
+        self.author_post.force_login(PostViewTest.author_post)
+        self.authorized_client = Client()
+        self.authorized_client.force_login(PostViewTest.authorized_user)
+        self.subscribed_user = Client()
+        self.subscribed_user.force_login(PostViewTest.subscribed_user)
 
     def test_pages_uses_correct_template(self):
         templates_pages_names = [
@@ -67,92 +65,6 @@ class PostURLTest(TestCase):
                 form_field = response.context.get('form').fields.get(value)
                 self.assertIsInstance(form_field, expected)
 
-    # def test_cache_index_page(self):
-    #     response_one = self.guest_client.get(template)
-    #     Post.objects.create(
-    #         text='Текст тестировки кэша',
-    #         author=self.user,
-    #     )
-    #     response_two = self.authorized_client.get(self.posts_index)
-    #     self.assertEqual(response_one.content, response_two.content)
-    #     cache.clear()
-    #     response_three = self.authorized_client.get(self.posts_index)
-    #     self.assertNotEqual(response_one.content, response_three.content)
-
-class PaginatorViewsTest(TestCase):
-    @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
-        cls.user = User.objects.create(username="Test_User", )
-        cls.group = Group.objects.create(
-            title="тест-группа",
-            slug="test_group",
-            description="тестирование",
-        )
-        for i in range(13):
-            cls.post = Post.objects.create(
-                text=f'Тестовый пост {i}',
-                author=cls.user,
-                group=Group.objects.get(slug='test_group'),
-            )
-
-    def setUp(self):
-        self.guest_client = Client()
-        self.user = User.objects.get(username="Test_User")
-        self.authorized_client = Client()
-        self.authorized_client.force_login(self.user)
-
-    def test_first_page_contains_ten_records(self):
-        templates = [
-            reverse('posts:index'),
-            reverse('posts:profile', kwargs={'username': 'Test_User'}),
-            reverse('posts:group_posts', kwargs={'slug': 'test_group'}),
-        ]
-        for template in templates:
-            with self.subTest(template=template):
-                response = self.guest_client.get(template)
-                self.assertEqual(len(response.context['page_obj']), 10)
-
-    def test_second_page_contains_three_records(self):
-        templates = [
-            reverse('posts:index'),
-            reverse('posts:profile', kwargs={'username': 'Test_User'}),
-            reverse('posts:group_posts', kwargs={'slug': 'test_group'}),
-        ]
-        for template in templates:
-            with self.subTest(template=template):
-                response = self.guest_client.get(template + '?page=2')
-                self.assertEqual(len(response.context['page_obj']), 3)
-
-
-class PostURLTest(TestCase):
-    @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
-        cls.author_post = User.objects.create_user(username='author_post')
-        cls.simple_user = User.objects.create_user(username='simple_user')
-        cls.subscriber_user = User.objects.create_user(username='subscriber_user')
-        cls.group = Group.objects.create(
-            title='Тестовая группа',
-            slug='test-slug',
-            description='Тестовое описание',
-        )
-        cls.post = Post.objects.create(
-            author=cls.author_post,
-            text='Текстовый пост',
-        )
-
-    def setUp(self):
-        self.guest_client = Client()
-        self.authorized_client = Client()
-        self.authorized_client.force_login(PostURLTest.simple_user)
-        self.authorized_client_2 = Client()
-        self.authorized_client_2.force_login(PostURLTest.simple_user)
-        self.author_post = Client()
-        self.author_post.force_login(PostURLTest.author_post)
-        self.subscriber_user = Client()
-        self.subscriber_user.force_login(PostURLTest.subscriber_user)
-
     def test_post_create_correct_appearance(self):
         Post.objects.create(
             text='Текстовый пост с группой',
@@ -176,7 +88,7 @@ class PostURLTest(TestCase):
         for response in responses.values():
             inner_response = response
             first_object = inner_response.context['page_obj'][0]
-            post_text_0: str = first_object.text
+            post_text_0 = first_object.text
             post_author_0 = first_object.author
             post_group_0 = first_object.group
             self.assertEqual(post_text_0, 'Текстовый пост с группой')
@@ -205,22 +117,13 @@ class PostURLTest(TestCase):
         third_look = self.authorized_client.get(
             reverse('posts:index'))
         self.assertNotEqual(first_look.content, third_look.content)
-        # Post.objects.create(
-        #     text='Текст 2 тестировки кэша',
-        #     author=User.objects.get(username='author_post'),
-        # )
-        # time.sleep(2)
-        # fourth_look = self.authorized_client.get(
-        #     reverse('posts:index'))
-        # self.assertNotEqual(third_look.content, fourth_look.content)
 
-    def test_following_function(self):
+    def test_follow_function(self):
         Follow.objects.create(
-            user=User.objects.get(username='subscriber_user'),
+            user=User.objects.get(username='subscribed_user'),
             author=User.objects.get(username='author_post')
         )
         followers_count = Follow.objects.count()
-
         self.authorized_client.get(
                 reverse(
                     'posts:profile_follow',
@@ -234,7 +137,7 @@ class PostURLTest(TestCase):
 
     def test_appearance_of_followed_authors_posts(self):
         Follow.objects.create(
-            user=User.objects.get(username='subscriber_user'),
+            user=User.objects.get(username='subscribed_user'),
             author=User.objects.get(username='author_post')
         )
         Post.objects.create(
@@ -246,8 +149,7 @@ class PostURLTest(TestCase):
                     'posts:profile_follow',
                     kwargs={'username': 'author_post'}))
         response_for_follower = self.authorized_client.get(
-            reverse(
-                'posts:follow_index'))
+            reverse('posts:follow_index'))
         followed_post = response_for_follower.context['page_obj'][0]
         self.assertEqual(str(followed_post), 'Тест подписок')
         response_for_not_follower = self.client.get(reverse('posts:follow_index'))

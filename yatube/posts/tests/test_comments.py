@@ -5,23 +5,22 @@ from django.conf import settings
 from django.test import Client, TestCase
 from django.urls import reverse
 
-from ..models import User, Group, Post, Comment
+from ..models import User, Post, Comment
 
 
 TEMP_MEDIA_ROOT = tempfile.mkdtemp(dir=settings.BASE_DIR)
 
 
-class PostURLTest(TestCase):
+class PostCommentsTest(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
         cls.author_post = User.objects.create_user(username='author_post')
-        cls.simple_user = User.objects.create_user(username='simple_user')
+        cls.authorized_user = User.objects.create_user(username='authorized_user')
         cls.post = Post.objects.create(
             author=cls.author_post,
             text='Текстовый пост',
         )
-
         cls.comment = Comment.objects.create(
             post=cls.post,
             author=cls.author_post,
@@ -29,11 +28,10 @@ class PostURLTest(TestCase):
             ),
 
     def setUp(self):
-        self.guest_client = Client()
-        self.authorized_client = Client()
-        self.authorized_client.force_login(PostURLTest.simple_user)
         self.author_post = Client()
-        self.author_post.force_login(PostURLTest.author_post)
+        self.author_post.force_login(PostCommentsTest.author_post)
+        self.authorized_client = Client()
+        self.authorized_client.force_login(PostCommentsTest.authorized_user)
 
     def test_comment_in_post_detail_page_show_exist(self):
         responses = {
@@ -55,7 +53,21 @@ class PostURLTest(TestCase):
                     text='Тестовый комментарий'
                 ).exists())
 
-    @classmethod
-    def tearDownClass(cls):
-        super().tearDownClass()
-        shutil.rmtree(TEMP_MEDIA_ROOT, ignore_errors=True)
+    def test_ability_to_post_a_comment(self):
+        comment_count = Comment.objects.count()
+        form_data = {
+            'text': 'Comment check',
+        }
+        self.client.post(
+            reverse('posts:add_comment', kwargs={'post_id': self.post.pk}),
+            data=form_data, follow=True)
+        self.assertEqual(Comment.objects.count(), comment_count)
+        self.authorized_client.post(
+            reverse('posts:add_comment', kwargs={'post_id': self.post.pk}),
+            data=form_data, follow=True)
+        self.assertEqual(Comment.objects.count(), comment_count + 1)
+        response = self.client.get(reverse('posts:post_detail',
+                                           kwargs={'post_id': self.post.id}
+                                           ))
+        newly_created_comment = response.context['comments'][0]
+        self.assertEqual(str(newly_created_comment), 'Comment check')
