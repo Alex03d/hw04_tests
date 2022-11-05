@@ -231,3 +231,24 @@ class PostURLTest(TestCase):
                     'posts:profile_unfollow',
                     kwargs={'username': 'author_post'}))
         self.assertEqual(Follow.objects.count(), followers_count)
+
+    def test_appearance_of_followed_authors_posts(self):
+        Follow.objects.create(
+            user=User.objects.get(username='subscriber_user'),
+            author=User.objects.get(username='author_post')
+        )
+        Post.objects.create(
+            text='Тест подписок',
+            author=User.objects.get(username='author_post'),
+        )
+        self.authorized_client.get(
+                reverse(
+                    'posts:profile_follow',
+                    kwargs={'username': 'author_post'}))
+        response_for_follower = self.authorized_client.get(
+            reverse(
+                'posts:follow_index'))
+        followed_post = response_for_follower.context['page_obj'][0]
+        self.assertEqual(str(followed_post), 'Тест подписок')
+        response_for_not_follower = self.client.get(reverse('posts:follow_index'))
+        self.assertNotIn(str(followed_post), response_for_not_follower)
